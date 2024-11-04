@@ -1,0 +1,100 @@
+Jenkins installation commands:
+
+sudo wget -O /etc/yum.repos.d/jenkins.repo \
+    https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum upgrade
+sudo dnf install java-17-amazon-corretto -y
+sudo yum install jenkins -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
+
+TOMCAT WEBSERVER INSTALLATION ON LINUX EC2 INSTANCE
+https://tomcat.apache.org/download-90.cgi ----> Downloads ----> Tomcat 9 ----> Copy the link of tar.gz file ----> https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.73/bin/apache-tomcat-9.0.73.tar.gz ----> sudo wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.73/bin/apachetomcat-9.0.73.tar.gz ----> ls -l ----> You will the tomcat file in red colour. This is a tar.gz file and we have to extract the tar.gz file ----> tar -xvf <enter the name of tomcat file in red colour> ----> All the files will get extracted ----> ls -l ----> You will see the list of extracted files ---> cd <enter the name of tomcat file in blue colour>
+
+Configuring the Users in Tomcat
+---------------------------------------------
+we need to edit the tomcat-users.xml to configure the users. The "tomcat-users.xml" file is available in "conf" folder
+<role rolename="manager-gui" />
+<user username="tomcat" password="tomcat" roles="manager-gui" />
+<role rolename="admin-gui" />
+<user username="admin" password="admin" roles="manager-gui,admin-gui"/>
+
+Install git on VM
+---------------------------------
+Install GIT in EC2 Instance where Jenkins is running
+sudo yum install git -y
+
+Inorder to do the automation, Jenkins is going to execute some script to deploy the war file into the Tomcat Webserver.
+___________________________________________________________
+Step 1: Adding the manager-script role in tomcat-users.xml file
+___________________________________________________________
+In order to do the automation, Tomcat user should have a "manager-script" permission. There should be one user in the Tomcat with the "manager-script" permission. Then with that user credentials we can automate the deployment process.
+
+Goto MobaXTerm and Connect to the Instance ----> ls -l ----> cd apache-tomcat-9.0.73 ----> ls -l ----> cd conf ----> ls -l ----> You can see tomcat-users.xml ----> vi tomcat-users.xml ----> Scroll down till you see "role rolename="manager-gui"", go to the last but-one line and type the below
+<role rolename="manager-script" /> 
+Goto the last line of "user username="admin"", and type manager-script at the last, just before inverted quotations ----> esc ----> :wq
+___________________________________________________________
+Step 2: Installing "deploy to container" plugin in Jenkins software
+___________________________________________________________
+Jenkins Dashboard ----> Manage Jenkins ----> Plugins ----> Available Plugins ----> In the search bar, type 'deploy to container' and check the same ----> Click on "Install without restart" ----> Click on "Go back to the top page.
+___________________________________________________________________________
+Step 3: Creating a Jenkins job and for that Jenkins job we will give permission to deploy
+___________________________________________________________________________
+Add JDK, GIT, MAVEN in Jenkins Browser Page by going into Tools Configuration
+
+
+
+
+Pipeline - Stage 1 & Stage 2 & Stage 3
+--------------------------------------------------
+Note: Before writing stage 3, run the below commands in MobaXTerm
+sudo visudo
+
+Note: #Add the following line at the end of the file, assuming the Jenkins user is 'jenkins'
+jenkins ALL=(ALL) NOPASSWD: /bin/cp
+
+
+pipeline {
+    agent any
+
+    tools {
+        maven 'maven s/w'
+    }
+
+    stages {
+        stage('Clone the Code') {
+            steps {
+                git 'https://github.com/KastroVKiran/Netflix-Pipeline-Project.git'
+            }
+        }
+        stage('Maven Build') {
+            steps {
+                script {
+                    def mavenHome = tool name: 'maven s/w', type: 'maven'
+                    def mavenCMD = "${mavenHome}/bin/mvn"
+                    // Run Maven build with parallel execution and skip tests if needed
+                    sh "${mavenCMD} clean package -T 1C -DskipTests"
+                }
+            }
+        }
+        stage('Deploy Stage') {
+            steps {
+                script {
+                    // Ensure target directory exists before copying
+                    sh 'ls -l target'
+                    // Deploy the WAR file to Tomcat
+                    sh 'sudo cp target/NETFLIX-1.2.2.war /home/ec2-user/apache-tomcat-9.0.96/webapps'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up after build...'
+            cleanWs() // Clean workspace after build
+        }
+    }
+}
