@@ -24,34 +24,37 @@ bash
 Copy
 Edit
 chmod +x aws_resource_list.sh
+
 🚀 Usage
 bash
 Copy
 Edit
 ./aws_resource_list.sh <aws_region> <aws_service>
+
 🧾 Example
 bash
 Copy
 Edit
 ./aws_resource_list.sh us-east-1 ec2
-💡 Supported AWS Services
-Service	Keyword
-EC2 Instances	ec2
-RDS Instances	rds
-S3 Buckets	s3
-CloudFront	cloudfront
-VPCs	vpc
-IAM Users	iam
-Route 53	route5*
-CloudWatch	cloudwatch
-CloudFormation	cloudformation
-Lambda	lambda
-SNS Topics	sns
-SQS Queues	sqs
-DynamoDB	dynamodb
-EBS Volumes	ebs
 
-⚠️ Note: Route 53 is listed as route5 in the script. You may want to correct this to route53 for consistency.
+💡 Supported AWS Services
+Service
+EC2 Instance
+RDS Instances	
+S3 Buckets	
+CloudFront	
+VPCs	vpc
+IAM Users	
+Route 53	
+CloudWatch	
+CloudFormation	
+Lambda	
+SNS Topics
+SQS Queues
+DynamoDB	
+EBS Volumes	
+
+
 
 📂 Output
 Each command displays the AWS CLI JSON output of the selected service's resources.
